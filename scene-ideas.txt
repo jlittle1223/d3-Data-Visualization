@@ -1,0 +1,26 @@
+Scenes
+
+Pie Chart of Category
+
+Histogram of average rating per category
+
+Histogram of average installs per category
+
+Pie chart of paid vs free. Interactively select category.
+
+Scatterplot of Installs vs Rating
+
+
+
+
+
+
+
+
+
+Pie char of paid vs free
+
+Pie chart of category
+
+Stacked bar chart of categories, with paid vs free stacked.
+

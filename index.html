@@ -1,9 +1,360 @@
 <html>
 <head>
-</head>
-<body>
 
-<h1>Hello</h1>
+<script src="http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+<style> 
+.chart rect {fill: steelblue}
+
+#tooltip
+{
+	opacity: 0;
+	position: absolute;
+	text-align: center;
+	width: 400px;
+	height: 40px;
+	background: white;
+	border-style: solid;
+	border-width: 2px;	
+	border-color: black;
+}
+	
+	
+#x
+{
+	width: 1em;
+	align: right;
+	vertical-align: top;
+	border-style: solid;
+	border-width: 2px;	
+	border-color: black;
+	
+}
+
+#annotation
+{
+	width: auto;
+	overflow: hidden;
+	border-style: solid;
+	border-width: 2px;	
+	border-color: black;
+	background: #e3dada;
+}
+
+
+</style>
+
+
+</head>
+<body onload="init()">
+
+<h1 id=chartTitle></h1>
+
+<div id="annotation">
+
+	
+	<div id="x">
+		<a onclick=hide_element("annotation");>X</a>
+	</div>
+	
+	Mouseover the chart to see more details
+</div>
+
+<br></br>
+
+<div id="selectDiv">Category: <select id="mySelect" onchange=redraw_scene() style="visibility: hidden"></select></div>
+
+<svg class="chart" width="600" height="600">
+</svg>
+<div id="tooltip"></div>
+
+<script>
+
+var px_buffer = 5;
+
+var current_scene = 0;
+var scenes = [scene_0, scene_1, scene_2];
+
+function init()
+{
+	if (current_scene >= scenes.length - 1)
+	{
+		document.getElementById("next_button").style.visibility = "hidden";
+	};
+	if (current_scene <= 0)
+	{
+		document.getElementById("previous_button").style.visibility = "hidden";
+	};
+	
+	
+	scenes[current_scene]();
+}
+
+function hide_element(id)
+{
+	document.getElementById(id).style.display = "None";
+}
+
+function clear_scene()
+{
+	d3.select("svg").selectAll("*").remove();
+	console.log("clearing scene");
+}
+
+function redraw_scene()
+{
+	clear_scene()
+	scenes[current_scene]();
+}
+
+function next_scene()
+{
+	clear_scene();
+	
+	current_scene += 1;
+	
+	if (current_scene >= scenes.length - 1)
+	{
+		document.getElementById("next_button").style.visibility = "hidden";
+	};
+	if (current_scene > 0)
+	{
+		document.getElementById("previous_button").style.visibility = "visible";
+	};
+	
+	scenes[current_scene]();
+}
+
+
+function previous_scene()
+{
+	clear_scene();
+	
+	current_scene -= 1;
+	
+	if (current_scene <= 0)
+	{
+		document.getElementById("previous_button").style.visibility = "hidden";
+	};
+	if (current_scene < scenes.length - 1)
+	{
+		document.getElementById("next_button").style.visibility = "visible";
+	};
+	
+	scenes[current_scene]();
+}
+
+
+
+async function scene_0()
+{
+	document.getElementById("selectDiv").style.visibility = "hidden";
+	document.getElementById("mySelect").style.visibility = "hidden";
+	chartTitle.innerHTML = "Google Play Store Apps:<br>Categories";
+
+	var pie = d3.pie();
+	var arc = d3.arc().innerRadius(0).outerRadius(300);
+
+
+	await d3.csv("googleplaystore.csv", 
+		function (data)
+		{
+			var categoryCount = d3.nest()
+			.key(function(d) {return d.Category;})
+			.rollup(function(v) {return v.length;})
+			.entries(data);
+			
+			var color = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8',
+			'#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c',
+			'#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8',
+			'#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075',
+			'#808080', '#ffffdd', '#000000', '#7072ca', '#a313f1',
+			'#234256', '#adsfha', '#245722', '#7653ca', '#a475f1',
+			'#123445', '#aaferf', '#762355', '#4523ca', '#a095f1',
+			'#975683', '#faddfd', '#625344', '#0783ca', '#a973f1',]
+			
+			
+			//console.log(categoryCount);
+			
+			var pie = d3.pie()
+			.value(function(d) {return d.value; })
+			
+			var data_ready = pie(d3.entries(categoryCount))
+			
+			var tooltip = d3.select("#tooltip");
+			
+			d3.select(".chart").selectAll("path").data(pie(categoryCount)).enter().append("path")
+			.attr("d", arc)
+			.attr("fill", function(d, i) {return color[i];})
+			.attr("transform", "translate(300, 300)")
+			.style("stroke-width", "2px")
+			.style("opacity", 0.8)
+			.on("mouseover", function(d, i) {
+				//console.log("mouseover event:" + categoryCount[i].key);
+				
+				tooltip.style("opacity", 1)
+			})
+			.on("mousemove", function(d, i) {
+				tooltip.style("left", (d3.event.pageX + px_buffer) + "px")
+				.style("top", (d3.event.pageY + px_buffer) + "px")
+				.html("Category: " + categoryCount[i].key + "<br>Number of Apps: " + categoryCount[i].value)
+			})
+			.on("mouseout", function() {tooltip.style("opacity", 0)})
+			;
+		}
+	);
+}
+
+
+function create_drop_down_menu(categories)
+{
+	var selector = document.getElementById("mySelect");
+	//var newOption = document.createElement("option");
+	//newOption.text = "ALL CATEGORIES";
+	//selector.add(newOption);
+	selector.style.visibility = "visible";
+	
+	categories.sort();
+	
+	options = [];
+	
+	for (var i = 0; i < selector.length; ++i)
+	{
+		options.push(selector[i].text)
+	}
+	
+	
+	
+	for (var i = 0; i < categories.length; ++i)
+	{
+		if (!options.includes(categories[i]))
+		{
+			var newOption = document.createElement("option");
+			newOption.text = categories[i];
+			selector.add(newOption);
+		}
+		
+	}
+}
+
+
+async function scene_1()
+{
+	chartTitle.innerHTML = "Google Play Store Apps:<br>Free vs Paid";
+
+	create_category_pie_chart("Type");
+}
+
+
+async function scene_2()
+{
+	chartTitle.innerHTML = "Google Play Store Apps:<br>Content Rating";
+
+	create_category_pie_chart("Content Rating");
+}
+
+
+async function create_category_pie_chart(column)
+{
+	
+	var pie = d3.pie();
+	var arc = d3.arc().innerRadius(0).outerRadius(300);
+
+
+	await d3.csv("googleplaystore.csv", 
+		function (data)
+		{
+			categories = [];
+		
+			var categoryCount = d3.nest()
+			.key(function(d)
+			{
+				if (!categories.includes(d.Category))
+				{
+					categories.push(d.Category);
+				}
+				return [d[column]," " + d.Category];
+			})
+			.rollup(function(v) {return v.length;})
+			.entries(data);
+			
+			create_drop_down_menu(categories);
+			
+			
+			categoryCount = categoryCount.filter(function (d, i)
+			{				
+				//console.log(d.key.split(",")[1].substring(1));
+				return d.key.split(",")[1].substring(1) == document.getElementById("mySelect").value;
+			})
+					
+			
+			
+			var pie = d3.pie()
+			.value(function(d) {return d.value; })
+			
+			var data_ready = pie(d3.entries(categoryCount))
+			
+			var tooltip = d3.select("#tooltip");
+			
+			d3.select(".chart").selectAll("path").data(pie(categoryCount)).enter().append("path")
+			.attr("d", arc)
+			.attr("fill", function(d, i) 
+			{
+				console.log(categoryCount[i].key.split(",")[0]);
+				
+				switch (column)
+				{
+					case "Type":
+						return (categoryCount[i].key.slice(0, 4) == "Free" ? "Green" : "Red");
+					case "Content Rating":
+						switch(categoryCount[i].key.split(",")[0])
+						{
+							case "Everyone":
+								return "skyblue";
+								break;
+							case "Everyone 10+":
+								return "Blue";
+								break;
+							case "Teen":
+								return "Yellow";
+								break;
+							case "Mature 17+":
+								return "Maroon";
+								break;
+						}
+						break;
+				}
+				
+				
+				//return (categoryCount[i].key.slice(0, 4) == "Free" ? "Green" : "Red")
+			})
+			.attr("transform", "translate(300, 300)")
+			.style("stroke-width", "2px")
+			.style("opacity", 0.8)
+			.on("mouseover", function(d, i) {
+				//console.log("mouseover event:" + categoryCount[i].key);
+				
+				tooltip.style("opacity", 1)
+			})
+			.on("mousemove", function(d, i) {
+				tooltip.style("left", (d3.event.pageX + px_buffer) + "px")
+				.style("top", (d3.event.pageY + px_buffer) + "px")
+				.html(column + ": " + categoryCount[i].key.split(",")[0] + "<br>Number of Apps: " + categoryCount[i].value)
+			})
+			.on("mouseout", function() {tooltip.style("opacity", 0)})
+			;
+		}
+	);
+}
+
+
+
+
+
+</script>
+
+<button id="previous_button" onclick="previous_scene()">Back</button>
+<button id="next_button" onclick="next_scene()">Next</button>
+
 
 </body>
 
