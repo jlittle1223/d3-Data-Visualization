@@ -282,7 +282,6 @@ async function create_category_pie_chart(column)
 			
 			categoryCount = categoryCount.filter(function (d, i)
 			{				
-				//console.log(d.key.split(",")[1].substring(1));
 				return d.key.split(",")[1].substring(1) == document.getElementById("mySelect").value;
 			})
 					
@@ -323,15 +322,11 @@ async function create_category_pie_chart(column)
 						}
 						break;
 				}
-				
-				
-				//return (categoryCount[i].key.slice(0, 4) == "Free" ? "Green" : "Red")
 			})
 			.attr("transform", "translate(300, 300)")
 			.style("stroke-width", "2px")
 			.style("opacity", 0.8)
 			.on("mouseover", function(d, i) {
-				//console.log("mouseover event:" + categoryCount[i].key);
 				
 				tooltip.style("opacity", 1)
 			})
